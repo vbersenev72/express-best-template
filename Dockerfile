@@ -15,4 +15,4 @@ RUN chown -R node:node /app
 USER node
 
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["npx", "ts-node", "./backend/index.ts"]
+CMD ["npx", "ts-node", "./src/index.ts"]
