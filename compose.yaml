@@ -1,42 +1,58 @@
-version: '3.8'
-
 services:
   mongodb:
     image: mongo:7
-    container_name: mongodb
+    container_name: express-mongo
     restart: unless-stopped
     volumes:
       - mongo_data:/data/db
-    networks:
-      - express-best-network
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   backend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: backend
+    container_name: express-backend
     restart: unless-stopped
-    expose:
-      - "9000"
+    ports:
+      - "${PORT:-9000}:${PORT:-9000}"
+    env_file:
+      - .env
     environment:
-      - DATABASE_URL=mongodb://mongodb:27017/
-      - DATABASE_NAME=express-best
-      - PORT=9000
-      - SECRET=fj0wkf092jdf0-2na0d0-fvbo-29fmwpKOL^^dklw
+      DATABASE_URL: mongodb://mongodb:27017/
     depends_on:
       mongodb:
         condition: service_healthy
-    networks:
-      - express-best-network
-
-networks:
-  express-best-network:
-    driver: bridge
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "1.0"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   mongo_data:

@@ -1,13 +1,18 @@
 FROM node:20-alpine
 
+RUN apk add --no-cache tini && rm -rf /var/cache/apk/*
+
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci && npm cache clean --force
 
 COPY tsconfig.json ./
 COPY . .
 
-EXPOSE 9000
+RUN chown -R node:node /app
 
-CMD ["npm", "run", "start:backend:docker"]
+USER node
+
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["npx", "ts-node", "./src/index.ts"]
